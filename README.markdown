@@ -5,12 +5,12 @@ and reinit the event loop after forks.
 
 Specific options :
 
-*monkey* None by default, does nothing. Else it can be a dict or
+`monkey`, None by default, it can be a dict or
 something that evaluate to True.
 If it is True, it patches all. (gevent.monkey.patch_all()).
 If it is a dict, it pass the dict as keywords arguments to patch_all().
 
-*signal_map* receives a dict of signals, but handler is either a
+`signal_map` receives a dict of signals, but handler is either a
 callable, a list of arguments [callable, arg1, arg2] or
 a string.
 callable without arguments will receive (signal, None) as arguments,
