@@ -20,7 +20,6 @@ a string.
 callable without arguments will receive (signal, None) as arguments,
 meaning the `frame` parameter is always None.
 
-usage:
 
     from geventdaemon import GeventDaemonContext
     def work()
