@@ -24,40 +24,36 @@ class GeventDaemonContext(daemon.DaemonContext):
     """
 
     def __init__(self, monkey=None, signal_map=None, **daemon_options):
-        self.signal_map = signal_map
+        self.gevent_signal_map = signal_map
         self.monkey = None
         super(GeventDaemonContext, self).__init__(
                 signal_map={}, **daemon_options)
 
     def open(self):
         pid = os.getpid()
-        super(GeventDaemonContext, self)
-        has_forked = pid == os.get_pid()
-        if has_forked:
+        super(GeventDaemonContext, self).open()
+        if pid != os.getpid():
             gevent.reinit()
         self._setup_gevent_signals()
         self._apply_monkey_patch()
 
     def _apply_monkey_patch(self):
-        if self.monkey is None:
-            return
-
         if isinstance(self.monkey, dict):
             gevent.monkey.patch_all(**self.monkey)
         elif self.monkey:
             gevent.monkey.patch_all()
 
     def _setup_gevent_signals(self):
-        if self.signal_map is None:
+        if self.gevent_signal_map is None:
             gevent.signal(signal.SIGTERM, self.terminate, signal.SIGTERM, None)
             return
 
-        for sig, target in self.signal_map:
+        for sig, target in self.gevent_signal_map.items():
             if target is None:
                 raise ValueError(
                         'invalid handler argument for signal %s', str(sig))
             tocall = target
-            args = [signal, None]
+            args = [sig, None]
             if isinstance(target, list):
                 if not list:
                     raise ValueError(
@@ -68,6 +64,6 @@ class GeventDaemonContext(daemon.DaemonContext):
                 assert not target.startswith('_')
                 tocall = getattr(self, target)
 
-            gevent.signal(signal, tocall, *args)
+            gevent.signal(sig, tocall, *args)
 
 

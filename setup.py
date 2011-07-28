@@ -9,6 +9,7 @@ setup(name="geventdaemon",
       packages=find_packages('lib'),
       zip_safe=False,
       install_requires=[
+          'gevent',
           'python-daemon',
         ],
     )
