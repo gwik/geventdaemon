@@ -13,7 +13,7 @@ usage:
         # frame is always None, it is there for compatibility with python-daemon
         raise SystemExit('terminated by signal %d' % int(signal))
 
-    context = GeventDaemonContext(monkey={'socket': True},
+    context = GeventDaemonContext(monkey={'httplib': True},
         signal_map={signal.SIGTERM: stop,
                     signal.SIGINT: stop})
 
