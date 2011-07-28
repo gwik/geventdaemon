@@ -1,6 +1,5 @@
-import gevent
+import gevent.monkey
 import daemon
-import os
 import signal
 
 
@@ -25,15 +24,14 @@ class GeventDaemonContext(daemon.DaemonContext):
 
     def __init__(self, monkey=None, signal_map=None, **daemon_options):
         self.gevent_signal_map = signal_map
-        self.monkey = None
+        self.monkey = monkey
         super(GeventDaemonContext, self).__init__(
                 signal_map={}, **daemon_options)
 
     def open(self):
-        pid = os.getpid()
         super(GeventDaemonContext, self).open()
-        if pid != os.getpid():
-            gevent.reinit()
+        # always reinit even when not forked when registering signals
+        gevent.reinit()
         self._setup_gevent_signals()
         self._apply_monkey_patch()
 
