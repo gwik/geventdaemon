@@ -55,7 +55,7 @@ class GeventDaemonContext(daemon.DaemonContext):
             tocall = target
             args = [sig, None]
             if isinstance(target, list):
-                if not list:
+                if not target:
                     raise ValueError(
                             'handler list is empty for signal %s', str(sig))
                 tocall = target[0]
