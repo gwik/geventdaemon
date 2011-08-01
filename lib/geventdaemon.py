@@ -22,9 +22,11 @@ class GeventDaemonContext(daemon.DaemonContext):
     If the daemon context forks. It calls gevent.reinit().
     """
 
-    def __init__(self, monkey=None, signal_map=None, **daemon_options):
+    def __init__(self, monkey_greenlet_report=False,
+            monkey=None, signal_map=None, **daemon_options):
         self.gevent_signal_map = signal_map
         self.monkey = monkey
+        self.monkey_greenlet_report = monkey_greenlet_report
         super(GeventDaemonContext, self).__init__(
                 signal_map={}, **daemon_options)
 
@@ -40,6 +42,22 @@ class GeventDaemonContext(daemon.DaemonContext):
             gevent.monkey.patch_all(**self.monkey)
         elif self.monkey:
             gevent.monkey.patch_all()
+
+        if self.monkey_greenlet_report:
+            import logging
+            original_report = gevent.Greenlet._report_error
+
+            def report(greenlet, exc_info):
+                exception = exc_info[1]
+                if isinstance(exception, gevent.GreenletExit):
+                    return original_report(greenlet, exc_info)
+                try:
+                    original_report(greenlet, exc_info)
+                finally:
+                    logging.error("Error in greenlet: %s" % str(exception),
+                            exc_info=exc_info)
+
+            gevent.Greenlet._report_error = report
 
     def _setup_gevent_signals(self):
         if self.gevent_signal_map is None:
