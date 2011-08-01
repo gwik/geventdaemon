@@ -14,7 +14,9 @@ something that evaluate to *True*.
 If it is *True*, it patches all. (see `gevent.monkey.patch_all()`).
 If it is a *dict*, it pass the dict as keywords arguments to patch_all().
 
-`monkey_greenlet_report`, False by default. It patches the gevent.Greenlet._report_error method to log the error using the logger of python logging.
+`monkey_greenlet_report`, False by default. It patches the 
+gevent.Greenlet._report_error method to log the error using the root logger 
+of python logging.
 
 `signal_map` receives a dict of signals, but handler is either a
 callable, a list of arguments [callable, arg1, arg2] or
