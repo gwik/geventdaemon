@@ -1,4 +1,5 @@
 import gevent.monkey
+import gevent.hub
 import daemon
 import signal
 
@@ -22,20 +23,24 @@ class GeventDaemonContext(daemon.DaemonContext):
     If the daemon context forks. It calls gevent.reinit().
     """
 
-    def __init__(self, monkey_greenlet_report=False,
-            monkey=None, signal_map=None, **daemon_options):
+    def __init__(self, monkey_greenlet_report=True,
+            monkey=True, gevent_hub=None, signal_map=None, **daemon_options):
         self.gevent_signal_map = signal_map
         self.monkey = monkey
         self.monkey_greenlet_report = monkey_greenlet_report
+        self.gevent_hub = gevent_hub
         super(GeventDaemonContext, self).__init__(
                 signal_map={}, **daemon_options)
 
     def open(self):
         super(GeventDaemonContext, self).open()
         # always reinit even when not forked when registering signals
+        self._apply_monkey_patch()
+        if self.gevent_hub is not None:
+            # gevent 1.0 only
+            gevent.get_hub(self.gevent_hub)
         gevent.reinit()
         self._setup_gevent_signals()
-        self._apply_monkey_patch()
 
     def _apply_monkey_patch(self):
         if isinstance(self.monkey, dict):
@@ -45,19 +50,16 @@ class GeventDaemonContext(daemon.DaemonContext):
 
         if self.monkey_greenlet_report:
             import logging
-            original_report = gevent.Greenlet._report_error
+            original_report = gevent.hub.Hub.print_exception
 
-            def report(greenlet, exc_info):
-                exception = exc_info[1]
-                if isinstance(exception, gevent.GreenletExit):
-                    return original_report(greenlet, exc_info)
+            def print_exception(self, context, type, value, tb):
                 try:
-                    original_report(greenlet, exc_info)
+                    logging.error("Error in greenlet: %s" % str(context),
+                            exc_info=(type, value, tb))
                 finally:
-                    logging.error("Error in greenlet: %s" % str(exception),
-                            exc_info=exc_info)
+                    return original_report(self, context, type, value, tb)
 
-            gevent.Greenlet._report_error = report
+            gevent.hub.Hub.print_exception = print_exception
 
     def _setup_gevent_signals(self):
         if self.gevent_signal_map is None:
